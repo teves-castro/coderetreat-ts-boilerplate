@@ -9,25 +9,31 @@ module.exports = function (config) {
     reporters: ["mocha"],
 
     files: [
-      "test/**/*spec.ts"
+      // "test/**/*spec.ts"
+      "tests.webpack.js"
     ],
 
     preprocessors: {
-      "test/**/*spec.ts": ["webpack", "sourcemap"]
+      // "test/**/*spec.ts": ["webpack", "sourcemap"]
+      "tests.webpack.js": ["webpack", "sourcemap"]
     },
 
     webpack: {
-      devtool: "inline-source-map",
+      // devtool: "inline-source-map",
 
       resolve: {
         extensions: ["", ".webpack.js", ".web.js", ".ts", ".tsx", ".js"]
       },
 
       module: {
-        loaders: [
-          { test: /\.ts?$/, loader: "babel!ts-loader" }
-        ]
-      }
+        // preLoaders: [{ test: /\.ts?$/, loader: "tslint" }],
+        loaders: [{ test: /\.ts?$/, loader: "babel!ts-loader" }]
+      },
+
+      // tslint: {
+      //   emitErrors: true,
+      //   failOnHint: true
+      // },
     }
   })
 
