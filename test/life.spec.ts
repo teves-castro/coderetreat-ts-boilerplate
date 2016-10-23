@@ -1,5 +1,5 @@
 import { assert } from "chai"
-import { Cell, evolve, evolveCell, Board, Coord, contains } from "../src/index"
+import { Cell, evolve, evolveCell, Board, Coord, contains, state, neighboursOf } from "../src/life"
 
 describe("Cell", () => {
   describe(".evolve", () => {
@@ -48,17 +48,22 @@ describe("Cell", () => {
 describe("Board", () => {
 
   const emptyBoard = new Board(3, 3, [])
+  const diagonalBoard = new Board(3, 3, [[0, 0], [1, 1], [2, 2]]);
+  const butterfly = new Board(3, 3, [[0, 2], [1, 1], [2, 2]])
   const underpopulatedBoard = new Board(3, 3, [[1, 1], [2, 2]])
   const survivorBoard = new Board(3, 3, [[0, 1], [1, 1], [1, 2], [2, 2]])
-  const fullBoard = new Board(3, 3, [
-    [0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2]])
-  const diagonalBoard = new Board(3, 3, [[0, 0], [1, 1], [2, 2]]);
+  const fullBoard = new Board(3, 3,
+    [
+      [0, 0], [0, 1], [0, 2],
+      [1, 0], [1, 1], [1, 2],
+      [2, 0], [2, 1], [2, 2]
+    ])
 
   describe(".init on a diagonal board", () => {
     [0, 1, 2].forEach(i => {
       describe(`cell @[${i},${i}]`, () => {
         it("should be alive", () => {
-          assert.isTrue(diagonalBoard.state([i, i]))
+          assert.isTrue(state(diagonalBoard, [i, i]))
         })
       })
     })
@@ -70,7 +75,7 @@ describe("Board", () => {
         if (c !== r) {
           describe(`cell @[${c},${r}]`, () => {
             it("should be dead", () => {
-              assert.isFalse(diagonalBoard.state([c, r]))
+              assert.isFalse(state(diagonalBoard, [c, r]))
             })
           })
         }
@@ -82,14 +87,14 @@ describe("Board", () => {
 
     function totalNeighbours(board: Board) {
       return board.coords
-        .map((c: Coord) => board.neighboursOf(c))
+        .map((c: Coord) => neighboursOf(board, c))
         .reduce((sum, i) => sum + i, 0)
     }
 
     describe("on an emptyBoard", () => {
       emptyBoard.coords.forEach(c => {
         it(`should return 0 for cell ${c}`, () => {
-          assert.isTrue(emptyBoard.neighboursOf([0, 0]) === 0)
+          assert.isTrue(neighboursOf(emptyBoard, [0, 0]) === 0)
         })
       })
     })
@@ -154,6 +159,19 @@ describe("Board", () => {
         assert.isFalse(member([1, 2]))
         assert.isFalse(member([0, 1]))
         assert.isFalse(member([2, 1]))
+      })
+    })
+
+    describe("on butterfly board", () => {
+      const next = evolve(evolve(evolve(butterfly))).liveCoords
+      const member = contains(next)
+      console.log(next.toArray())
+      it("should have [0,1] and [2, 1] cells alive", () => {
+        assert.isTrue(member([0, 1]))
+        assert.isTrue(member([2, 1]))
+      })
+      it("should have [1,1] cell dead", () => {
+        assert.isTrue(member([1, 1]))
       })
     })
   })
