@@ -1,10 +1,10 @@
 import { assert } from "chai"
-import { Cell, evolve, evolveCell, Board, Coord, contains, state, neighboursOf } from "../src/life"
+import { Cell, evolve, evolveCell, Board, contains, state, Coord, neighboursOf } from "../src/life"
 
 describe("Cell", () => {
   describe(".evolve", () => {
-    const live: Cell = [[0, 0], true]
-    const dead: Cell = [[0, 0], false]
+    const live: Cell = { coord: [0, 0], state: true }
+    const dead: Cell = { coord: [0, 0], state: false }
     describe("on a live cell", () => {
       [2, 3].forEach(n => {
         describe(`with ${n} neighbours`, () => {
@@ -49,7 +49,6 @@ describe("Board", () => {
 
   const emptyBoard = new Board([])
   const diagonalBoard = new Board([[0, 0], [1, 1], [2, 2]]);
-  // const butterfly = new Board([[0, 2], [1, 1], [2, 2]])
   const underpopulatedBoard = new Board([[1, 1], [2, 2]])
   const survivorBoard = new Board([[0, 1], [1, 1], [1, 2], [2, 2]])
   const fullBoard = new Board(
@@ -83,43 +82,43 @@ describe("Board", () => {
     })
   })
 
-  // describe(".neighboursOf", () => {
+  describe(".neighboursOf", () => {
 
-  //   function totalNeighbours(board: Board) {
-  //     return board.coords
-  //       .map((c: Coord) => neighboursOf(board, c))
-  //       .reduce((sum, i) => sum + i, 0)
-  //   }
+    function totalNeighbours(board: Board) {
+      return board.liveCoords.toList()
+        .map((coord: Coord) => neighboursOf(board, coord))
+        .reduce((sum, i) => sum + i, 0)
+    }
 
-  //   describe("on an emptyBoard", () => {
-  //     emptyBoard.coords.forEach(c => {
-  //       it(`should return 0 for cell ${c}`, () => {
-  //         assert.isTrue(neighboursOf(emptyBoard, [0, 0]) === 0)
-  //       })
-  //     })
-  //   })
+    describe("on an emptyBoard", () => {
+      emptyBoard.liveCoords.forEach(c => {
+        it(`should return 0 for cell ${c}`, () => {
+          assert.isTrue(neighboursOf(emptyBoard, [0, 0]) === 0)
+        })
+      })
+    })
 
-  //   describe("on underpopulatedBoard", () => {
-  //     it("total neighbours should be 11", () => {
-  //       const result = totalNeighbours(underpopulatedBoard)
-  //       assert.equal(result, 11)
-  //     })
-  //   })
+    describe("on underpopulatedBoard", () => {
+      it("total neighbours should be 2", () => {
+        const result = totalNeighbours(underpopulatedBoard)
+        assert.equal(result, 2)
+      })
+    })
 
-  //   describe("on survivorBoard", () => {
-  //     it("total neighbours should be 22", () => {
-  //       const result = totalNeighbours(survivorBoard)
-  //       assert.equal(result, 21)
-  //     })
-  //   })
+    describe("on survivorBoard", () => {
+      it("total neighbours should be 10", () => {
+        const result = totalNeighbours(survivorBoard)
+        assert.equal(result, 10)
+      })
+    })
 
-  //   describe("on fullBoard", () => {
-  //     it("total neighbours should be 40", () => {
-  //       const result = totalNeighbours(fullBoard)
-  //       assert.equal(result, 40)
-  //     })
-  //   })
-  // })
+    describe("on fullBoard", () => {
+      it("total neighbours should be 40", () => {
+        const result = totalNeighbours(fullBoard)
+        assert.equal(result, 40)
+      })
+    })
+  })
 
   describe(".evolve", () => {
     describe("on an all dead board", () => {
@@ -131,7 +130,7 @@ describe("Board", () => {
     describe("on under populated board", () => {
       it("should kill all cells", () => {
         const next = evolve(underpopulatedBoard)
-        assert.equal(next.liveCoords, emptyBoard.liveCoords)
+        assert.isTrue(next.liveCoords.equals(emptyBoard.liveCoords))
       })
     })
 
@@ -147,7 +146,7 @@ describe("Board", () => {
     describe("on fullBoard board", () => {
       const next = evolve(fullBoard).liveCoords
       const member = contains(next)
-      it("should keep on the corners alive", () => {
+      it("should keep the corners alive", () => {
         assert.isTrue(member([0, 0]))
         assert.isTrue(member([0, 2]))
         assert.isTrue(member([2, 0]))
@@ -161,18 +160,5 @@ describe("Board", () => {
         assert.isFalse(member([2, 1]))
       })
     })
-
-    // describe("on butterfly board", () => {
-    //   const next = evolve(evolve(evolve(butterfly))).liveCoords
-    //   const member = contains(next)
-    //   console.log(next.toArray())
-    //   it("should have [0,1] and [2, 1] cells alive", () => {
-    //     assert.isTrue(member([0, 1]))
-    //     assert.isTrue(member([2, 1]))
-    //   })
-    //   it("should have [1,1] cell dead", () => {
-    //     assert.isTrue(member([1, 1]))
-    //   })
-    // })
   })
 })
