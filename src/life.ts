@@ -1,4 +1,7 @@
-import { List, Range } from "immutable"
+import { Set, Iterable } from "immutable"
+
+export type Coord = [number, number]
+export type Cell = [Coord, boolean]
 
 export function evolveCell(cell: Cell, liveNeighbours: number): Cell {
   const [coords, currentState] = cell
@@ -6,22 +9,44 @@ export function evolveCell(cell: Cell, liveNeighbours: number): Cell {
   return [coords, state]
 }
 
+export class Board {
+  public liveCoords: Set<Coord>
+
+  constructor(liveCells: Coord[]) {
+    this.liveCoords = Set<Coord>(liveCells)
+  }
+}
+
+function surround([c, r]: Coord): Iterable.Indexed<Coord>[] {
+  return [
+    [c - 1, r - 1], [c, r - 1], [c + 1, r - 1],
+    [c - 1, r], [c, r], [c + 1, r],
+    [c - 1, r + 1], [c, r + 1], [c + 1, r + 1],
+  ].map(Iterable)
+}
+
 export function evolve(board: Board): Board {
-  const newLiveCoords =
-    board.coords
-      .map((c: Coord) => {
-        const cell: Cell = [c, state(board, c)]
-        const neighbours = neighboursOf(board, c)
+  const liveCoords =
+    board.liveCoords
+      .flatMap<number, Iterable.Indexed<Coord>>(surround)
+      .toSet()
+      .map((c: Iterable.Indexed<Coord>) => {
+        const cc: Coord = c.toArray() as any as Coord
+        const cell: Cell = [cc, state(board, cc)]
+        const neighbours = neighboursOf(board, cc)
         return evolveCell(cell, neighbours)
       })
       .filter(([, s]: Cell) => s)
       .map(([c]: Cell) => c)
-      .toList()
-  const newBoard = Object.assign({}, board, { liveCoords: newLiveCoords })
+      .toSet()
+
+  const newBoard = Object.assign({}, board, {
+    liveCoords,
+  })
   return newBoard
 }
 
-export function contains(coords: List<Coord>) {
+export function contains(coords: Set<Coord>) {
   return ([c, r]: Coord) => {
     return coords.some(([cc, cr]: Coord) => cc === c && cr === r)
   }
@@ -40,22 +65,6 @@ export function areNeighbours([c1, r1]: Coord, [c2, r2]: Coord) {
     r1 === r2 && Math.abs(c1 - c2) === 1 ||
     Math.abs(c1 - c2) === 1 && Math.abs(r1 - r2) === 1
   )
-}
-
-export type Coord = [number, number]
-export type Cell = [Coord, boolean]
-
-export class Board {
-  public readonly coords: List<Coord>
-  public readonly liveCoords: List<Coord>
-  public readonly cols: number
-  public readonly rows: number
-
-  constructor(cols: number, rows: number, cells: Coord[]) {
-    const coords = Range(0, cols).flatMap(c => Range(0, rows).map(r => [c, r] as Coord)).toArray()
-    this.coords = List<Coord>(coords)
-    this.liveCoords = List<Coord>(cells)
-  }
 }
 
 function draw(board: Board, boxSize: number, ctx: CanvasRenderingContext2D) {
@@ -79,7 +88,7 @@ export function game(board: Board, boxSize: number) {
           ctx.clearRect(0, 0, paper.width, paper.height)
           draw(board, boxSize, ctx)
           board = evolve(board)
-        }, 1000 / 25)
+        }, 1000 / 30)
       } else {
         clearInterval(loopId)
         loopId = undefined
